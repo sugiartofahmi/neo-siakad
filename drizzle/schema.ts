@@ -6,14 +6,53 @@ import {
   integer,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccount } from "@auth/core/adapters";
+import { relations } from "drizzle-orm";
 
-export const users = pgTable("user", {
+export const users = pgTable("users", {
   id: text("id").notNull().primaryKey(),
   fullname: text("fullname"),
   email: text("email").notNull(),
-  emailVerified: timestamp("emailVerified", { mode: "date" }),
-  image: text("image"),
+  password: text("password"),
+  roleId: text("role_id").notNull(),
 });
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  userAffiliations: one(userAffiliations),
+  roles: one(roles, {
+    fields: [users.roleId],
+    references: [roles.id],
+  }),
+}));
+
+export const roles = pgTable("roles", {
+  id: text("id").notNull().primaryKey(),
+  name: text("name"),
+  permissions: text("permissions").array(),
+});
+
+export const rolesRelations = relations(roles, ({ many }) => ({
+  users: many(users),
+}));
+
+export const userAffiliations = pgTable(
+  "user_affiliations",
+  {
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id"),
+    facultyId: text("faculty_id"),
+    departmentId: text("department_id"),
+  },
+  (affiliations) => ({
+    compoundKeyOrganization: primaryKey({
+      columns: [affiliations.userId, affiliations.organizationId],
+    }),
+    compoundKeyUnit: primaryKey({
+      columns: [affiliations.facultyId, affiliations.departmentId],
+    }),
+  })
+);
 
 export const accounts = pgTable(
   "account",
