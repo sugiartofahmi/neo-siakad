@@ -16,7 +16,7 @@ import {
   verificationTokens,
 } from "./schema";
 import { drizzle } from "drizzle-orm/node-postgres";
-
+import { faker } from "@faker-js/faker";
 const dbUrl = process.env["DATABASE_URL"] as string;
 const dbQueryClient = new Pool({
   connectionString: dbUrl,
