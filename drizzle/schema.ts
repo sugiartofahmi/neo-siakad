@@ -4,6 +4,7 @@ import {
   text,
   primaryKey,
   integer,
+  boolean,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccount } from "@auth/core/adapters";
 import { relations } from "drizzle-orm";
@@ -13,7 +14,11 @@ export const users = pgTable("users", {
   fullname: text("fullname"),
   email: text("email").notNull(),
   password: text("password"),
-  roleId: text("role_id").notNull(),
+  roleId: text("role_id")
+    .notNull()
+    .references(() => roles.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -28,6 +33,8 @@ export const roles = pgTable("roles", {
   id: text("id").notNull().primaryKey(),
   name: text("name"),
   permissions: text("permissions").array(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -40,9 +47,11 @@ export const userAffiliations = pgTable(
     userId: text("userId")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    organizationId: text("organization_id"),
-    facultyId: text("faculty_id"),
-    departmentId: text("department_id"),
+    organizationId: text("organization_id").references(() => organizations.id),
+    facultyId: text("faculty_id").references(() => faculty.id),
+    departmentId: text("department_id").references(() => department.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (affiliations) => ({
     compoundKeyOrganization: primaryKey({
@@ -51,6 +60,168 @@ export const userAffiliations = pgTable(
     compoundKeyUnit: primaryKey({
       columns: [affiliations.facultyId, affiliations.departmentId],
     }),
+  })
+);
+export const userAffiliationsRelations = relations(
+  userAffiliations,
+  ({ one }) => ({
+    faculty: one(faculty, {
+      fields: [userAffiliations.facultyId],
+      references: [faculty.id],
+    }),
+    department: one(department, {
+      fields: [userAffiliations.departmentId],
+      references: [department.id],
+    }),
+    organization: one(organizations, {
+      fields: [userAffiliations.organizationId],
+      references: [organizations.id],
+    }),
+  })
+);
+export const activities = pgTable("activities", {
+  id: text("id").notNull().primaryKey(),
+  name: text("name"),
+  description: text("description"),
+  location: text("location"),
+  startDate: timestamp("start_date", { withTimezone: true }),
+  endDate: timestamp("end_date", { withTimezone: true }),
+  budget: text("budget"),
+  applicantId: text("applicant_id").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const activitiesRelations = relations(activities, ({ one, many }) => ({
+  users: one(users, {
+    fields: [activities.applicantId],
+    references: [users.id],
+  }),
+  proposals: many(proposals),
+}));
+
+export const organizations = pgTable("organizations", {
+  id: text("id").notNull().primaryKey(),
+  name: text("name"),
+  facultyId: text("faculty_id").references(() => faculty.id),
+  departmentId: text("department_id").references(() => department.id),
+  organizationLevelId: text("organization_level_id").references(
+    () => organizationLevel.id
+  ),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const organizationsRelations = relations(organizations, ({ one }) => ({
+  faculty: one(faculty, {
+    fields: [organizations.facultyId],
+    references: [faculty.id],
+  }),
+  department: one(department, {
+    fields: [organizations.departmentId],
+    references: [department.id],
+  }),
+  organizationLevel: one(organizationLevel, {
+    fields: [organizations.organizationLevelId],
+    references: [organizationLevel.id],
+  }),
+}));
+
+export const organizationLevel = pgTable("organization_level", {
+  id: text("id").notNull().primaryKey(),
+  name: text("name"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const organizationLevelRelations = relations(
+  organizationLevel,
+  ({ many }) => ({
+    organization: many(organizations),
+  })
+);
+
+export const faculty = pgTable("faculty", {
+  id: text("id").notNull().primaryKey(),
+  name: text("name"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const facultyRelations = relations(faculty, ({ many }) => ({
+  userAffiliations: many(userAffiliations),
+  organizations: many(organizations),
+}));
+
+export const department = pgTable("department", {
+  id: text("id").notNull().primaryKey(),
+  name: text("name"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const departmentRelations = relations(department, ({ many }) => ({
+  userAffiliations: many(userAffiliations),
+  organizations: many(organizations),
+}));
+
+export const reviews = pgTable("reviews", {
+  id: text("id").notNull().primaryKey(),
+  reviewerId: text("reviewer_id").references(() => users.id),
+  proposalId: text("proposal_id").references(() => proposals.id),
+  isApproved: boolean("is_approved"),
+  commenst: text("commenst"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  reviewer: one(users, {
+    fields: [reviews.reviewerId],
+    references: [users.id],
+  }),
+  proposal: one(proposals, {
+    fields: [reviews.proposalId],
+    references: [proposals.id],
+  }),
+}));
+
+export const proposals = pgTable("proposals", {
+  id: text("id").notNull().primaryKey(),
+  title: text("title"),
+  file: text("file"),
+  proposalStatusId: text("proposal_staus_id").references(
+    () => proposalStatus.id
+  ),
+  activityId: text("activity_id").references(() => activities.id, {
+    onDelete: "cascade",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const proposalsRelations = relations(proposals, ({ one }) => ({
+  proposalStatus: one(proposalStatus, {
+    fields: [proposals.proposalStatusId],
+    references: [proposalStatus.id],
+  }),
+  activity: one(activities, {
+    fields: [proposals.activityId],
+    references: [activities.id],
+  }),
+}));
+
+export const proposalStatus = pgTable("proposal_status", {
+  id: text("id").notNull().primaryKey(),
+  name: text("name"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const proposalStatusRelations = relations(
+  proposalStatus,
+  ({ many }) => ({
+    proposals: many(proposals),
   })
 );
 
