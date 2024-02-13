@@ -239,12 +239,12 @@ export const organizationLevelRelations = relations(
   })
 );
 
-//Memiliki relasi ke table organization (ormawa senat/bem)
+//Memiliki relasi ke table organization (ormawa senat/bem) serta userAffiliations(untuk role Wakil Dekan, Ketua Prodi dan ormawa)
 export const facultyRelations = relations(faculty, ({ many }) => ({
   userAffiliations: many(userAffiliations),
   organizations: many(organizations),
 }));
-//Memiliki relasi ke table organization (ormawa himpunan)
+//Memiliki relasi ke table organization (ormawa himpunan), fakultas serta userAffiliations(untuk role Wakil Dekan, Ketua Prodi dan ormawa)
 export const departmentRelations = relations(department, ({ many, one }) => ({
   userAffiliations: many(userAffiliations),
   organizations: many(organizations),
