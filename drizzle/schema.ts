@@ -15,7 +15,7 @@ export const users = pgTable("users", {
   fullname: text("fullname"),
   email: text("email").notNull(),
   password: text("password"),
-  roleId: text("role_id")
+  roleId: serial("role_id")
     .notNull()
     .references(() => roles.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
@@ -33,12 +33,14 @@ export const roles = pgTable("roles", {
 export const userAffiliations = pgTable(
   "user_affiliations",
   {
-    userId: text("userId")
+    userId: serial("userId")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    organizationId: text("organization_id").references(() => organizations.id),
-    facultyId: text("faculty_id").references(() => faculty.id),
-    departmentId: text("department_id").references(() => department.id),
+    organizationId: serial("organization_id").references(
+      () => organizations.id
+    ),
+    facultyId: serial("faculty_id").references(() => faculty.id),
+    departmentId: serial("department_id").references(() => department.id),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
@@ -60,7 +62,7 @@ export const activities = pgTable("activities", {
   startDate: timestamp("start_date", { withTimezone: true }),
   endDate: timestamp("end_date", { withTimezone: true }),
   budget: text("budget"),
-  applicantId: text("applicant_id").references(() => users.id),
+  applicantId: serial("applicant_id").references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
@@ -68,8 +70,8 @@ export const activities = pgTable("activities", {
 export const organizations = pgTable("organizations", {
   id: serial("id").primaryKey(),
   name: text("name"),
-  facultyId: text("faculty_id").references(() => faculty.id),
-  departmentId: text("department_id").references(() => department.id),
+  facultyId: serial("faculty_id").references(() => faculty.id),
+  departmentId: serial("department_id").references(() => department.id),
   organizationLevelId: text("organization_level_id").references(
     () => organizationLevel.id
   ),
@@ -86,22 +88,23 @@ export const organizationLevel = pgTable("organization_level", {
 
 export const faculty = pgTable("faculty", {
   id: serial("id").primaryKey(),
-  name: text("name"),
+  name: text("name").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 export const department = pgTable("department", {
   id: serial("id").primaryKey(),
-  name: text("name"),
+  name: text("name").notNull(),
+  facultyId: serial("faculty_id").references(() => faculty.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
-  reviewerId: text("reviewer_id").references(() => users.id),
-  proposalId: text("proposal_id").references(() => proposals.id),
+  reviewerId: serial("reviewer_id").references(() => users.id),
+  proposalId: serial("proposal_id").references(() => proposals.id),
   isApproved: boolean("is_approved"),
   commenst: text("commenst"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
@@ -112,10 +115,10 @@ export const proposals = pgTable("proposals", {
   id: serial("id").primaryKey(),
   title: text("title"),
   file: text("file"),
-  proposalStatusId: text("proposal_staus_id").references(
+  proposalStatusId: serial("proposal_staus_id").references(
     () => proposalStatus.id
   ),
-  activityId: text("activity_id").references(() => activities.id, {
+  activityId: serial("activity_id").references(() => activities.id, {
     onDelete: "cascade",
   }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
