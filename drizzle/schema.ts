@@ -176,7 +176,6 @@ export const verificationTokens = pgTable(
   })
 );
 
-//
 export const usersRelations = relations(users, ({ one, many }) => ({
   userAffiliations: one(userAffiliations),
   roles: one(roles, {
@@ -189,6 +188,7 @@ export const rolesRelations = relations(roles, ({ many }) => ({
   users: many(users),
 }));
 
+//Informasi tambahan user, untuk role Wakil Dekan, Ketua Prodi dan ormawa
 export const userAffiliationsRelations = relations(
   userAffiliations,
   ({ one }) => ({
@@ -206,6 +206,8 @@ export const userAffiliationsRelations = relations(
     }),
   })
 );
+
+//Table kegiatan berelasi dengan user(pemohon) serta proposal (one to many)
 export const activitiesRelations = relations(activities, ({ one, many }) => ({
   users: one(users, {
     fields: [activities.applicantId],
@@ -213,6 +215,8 @@ export const activitiesRelations = relations(activities, ({ one, many }) => ({
   }),
   proposals: many(proposals),
 }));
+
+//Memuat relasi fakultas dan departmen(untuk ormawa himpunan dan senat/bem), serta terdapat organization level(universitas,fakultas, prodi)
 export const organizationsRelations = relations(organizations, ({ one }) => ({
   faculty: one(faculty, {
     fields: [organizations.facultyId],
@@ -227,21 +231,30 @@ export const organizationsRelations = relations(organizations, ({ one }) => ({
     references: [organizationLevel.id],
   }),
 }));
+// Memiliki relasi terhadap table organization(one to many)
 export const organizationLevelRelations = relations(
   organizationLevel,
   ({ many }) => ({
     organization: many(organizations),
   })
 );
+
+//Memiliki relasi ke table organization (ormawa senat/bem)
 export const facultyRelations = relations(faculty, ({ many }) => ({
   userAffiliations: many(userAffiliations),
   organizations: many(organizations),
 }));
-export const departmentRelations = relations(department, ({ many }) => ({
+//Memiliki relasi ke table organization (ormawa himpunan)
+export const departmentRelations = relations(department, ({ many, one }) => ({
   userAffiliations: many(userAffiliations),
   organizations: many(organizations),
+  faculty: one(faculty, {
+    fields: [department.facultyId],
+    references: [faculty.id],
+  }),
 }));
 
+//Memiliki relasi ke reviewer (user) dan proposal
 export const reviewsRelations = relations(reviews, ({ one }) => ({
   reviewer: one(users, {
     fields: [reviews.reviewerId],
@@ -252,6 +265,8 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
     references: [proposals.id],
   }),
 }));
+
+//Memiliki relasi ke proposal status, serta ke table kegiatan(activity)
 export const proposalsRelations = relations(proposals, ({ one }) => ({
   proposalStatus: one(proposalStatus, {
     fields: [proposals.proposalStatusId],
@@ -263,6 +278,7 @@ export const proposalsRelations = relations(proposals, ({ one }) => ({
   }),
 }));
 
+//Table berisi status proposal (Approve, reject, revision) dan memiliki relasi ke table proposals
 export const proposalStatusRelations = relations(
   proposalStatus,
   ({ many }) => ({
